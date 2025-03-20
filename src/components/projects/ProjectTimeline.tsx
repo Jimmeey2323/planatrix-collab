@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Project, Task } from '@/lib/types';
 import { format, parseISO, addDays, differenceInDays, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
@@ -15,7 +14,6 @@ export const ProjectTimeline: React.FC<ProjectTimelineProps> = ({ project, tasks
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<'month' | 'week'>('month');
   
-  // Function to get start and end dates for the timeline
   const getTimelineDates = () => {
     if (view === 'month') {
       return {
@@ -23,7 +21,6 @@ export const ProjectTimeline: React.FC<ProjectTimelineProps> = ({ project, tasks
         end: endOfMonth(currentDate),
       };
     } else {
-      // Week view - show 7 days starting from current date
       return {
         start: currentDate,
         end: addDays(currentDate, 6),
@@ -34,7 +31,6 @@ export const ProjectTimeline: React.FC<ProjectTimelineProps> = ({ project, tasks
   const { start, end } = getTimelineDates();
   const days = eachDayOfInterval({ start, end });
   
-  // Navigate to previous/next period
   const navigatePrevious = () => {
     if (view === 'month') {
       setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
@@ -51,7 +47,6 @@ export const ProjectTimeline: React.FC<ProjectTimelineProps> = ({ project, tasks
     }
   };
   
-  // Filter tasks that fall within the timeline
   const timelineTasks = tasks.filter(task => {
     if (!task.dueDate) return false;
     
@@ -59,7 +54,6 @@ export const ProjectTimeline: React.FC<ProjectTimelineProps> = ({ project, tasks
     return taskDate >= start && taskDate <= end;
   });
   
-  // Get project start and end dates
   const projectStart = project.startDate ? parseISO(project.startDate) : start;
   const projectEnd = project.dueDate ? parseISO(project.dueDate) : end;
   
@@ -101,9 +95,8 @@ export const ProjectTimeline: React.FC<ProjectTimelineProps> = ({ project, tasks
         </div>
       </div>
       
-      <ScrollArea className="h-[500px]" orientation="both">
+      <ScrollArea className="w-full overflow-auto pb-12">
         <div className="min-w-[800px]">
-          {/* Timeline header */}
           <div className="flex border-b border-border sticky top-0 bg-card z-10">
             <div className="w-48 p-3 border-r border-border flex-shrink-0">
               <span className="text-sm font-medium">Task</span>
@@ -124,14 +117,12 @@ export const ProjectTimeline: React.FC<ProjectTimelineProps> = ({ project, tasks
             </div>
           </div>
           
-          {/* Project Timeline */}
           <div className="flex border-b border-border">
             <div className="w-48 p-3 border-r border-border flex-shrink-0">
               <span className="text-sm font-medium">Project Timeline</span>
             </div>
             
             <div className="flex flex-1 relative">
-              {/* Project bar */}
               {projectStart <= end && projectEnd >= start && (
                 <div 
                   className="absolute h-8 bg-brand-200 border border-brand-500 rounded-md flex items-center justify-center"
@@ -147,7 +138,6 @@ export const ProjectTimeline: React.FC<ProjectTimelineProps> = ({ project, tasks
                 </div>
               )}
               
-              {/* Day cells */}
               {days.map((day) => (
                 <div 
                   key={day.toString()} 
@@ -159,12 +149,10 @@ export const ProjectTimeline: React.FC<ProjectTimelineProps> = ({ project, tasks
             </div>
           </div>
           
-          {/* Tasks */}
           {timelineTasks.map((task) => {
             const taskDate = task.dueDate ? parseISO(task.dueDate) : null;
             if (!taskDate) return null;
             
-            // Calculate position
             const dayIndex = days.findIndex(d => 
               d.getDate() === taskDate.getDate() && 
               d.getMonth() === taskDate.getMonth() && 
@@ -173,7 +161,6 @@ export const ProjectTimeline: React.FC<ProjectTimelineProps> = ({ project, tasks
             
             if (dayIndex === -1) return null;
             
-            // Status colors
             const statusColors = {
               'todo': 'bg-slate-100 border-slate-400 text-slate-800',
               'in-progress': 'bg-blue-100 border-blue-400 text-blue-800',
@@ -188,7 +175,6 @@ export const ProjectTimeline: React.FC<ProjectTimelineProps> = ({ project, tasks
                 </div>
                 
                 <div className="flex flex-1 relative">
-                  {/* Task marker */}
                   <div 
                     className={`absolute h-8 ${statusColors[task.status]} border rounded-md flex items-center justify-center px-2`}
                     style={{
@@ -202,7 +188,6 @@ export const ProjectTimeline: React.FC<ProjectTimelineProps> = ({ project, tasks
                     </span>
                   </div>
                   
-                  {/* Day cells */}
                   {days.map((day) => (
                     <div 
                       key={day.toString()} 
@@ -216,7 +201,6 @@ export const ProjectTimeline: React.FC<ProjectTimelineProps> = ({ project, tasks
             );
           })}
           
-          {/* Empty state */}
           {timelineTasks.length === 0 && (
             <div className="text-center py-10">
               <Calendar className="h-12 w-12 mx-auto text-muted-foreground" />

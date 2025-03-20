@@ -1,36 +1,55 @@
-
-import React, { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { format, parseISO } from 'date-fns';
-import { CalendarIcon } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { useProjects } from '@/hooks/use-projects';
-import { useUsers } from '@/hooks/use-users';
-import { cn } from '@/lib/utils';
-import { MultiSelect } from '@/components/ui/multi-select';
-import { Project } from '@/lib/types';
+import React from 'react';
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { CalendarIcon, Loader2 } from "lucide-react";
+import { format } from "date-fns";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { Project } from "@/lib/types";
+import { useProjects } from "@/hooks/use-projects";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { X } from "lucide-react";
 
 const formSchema = z.object({
-  title: z.string().min(3, { message: 'Title must be at least 3 characters.' }),
-  description: z.string().min(10, { message: 'Description must be at least 10 characters.' }),
+  title: z.string().min(1, "Title is required"),
+  description: z.string().min(1, "Description is required"),
   startDate: z.date(),
-  dueDate: z.date().optional().nullable(),
-  status: z.string().optional(),
-  team: z.array(z.string()).optional(),
+  dueDate: z.date(),
+  status: z.enum(["planned", "active", "on-hold", "completed", "cancelled"]),
   categories: z.array(z.string()).optional(),
-  progress: z.number().min(0).max(100).optional(),
 });
-
-type FormValues = z.infer<typeof formSchema>;
 
 interface EditProjectDialogProps {
   project: Project;
@@ -38,71 +57,64 @@ interface EditProjectDialogProps {
   onClose: () => void;
 }
 
-export const EditProjectDialog: React.FC<EditProjectDialogProps> = ({ project, isOpen, onClose }) => {
+export const EditProjectDialog: React.FC<EditProjectDialogProps> = ({
+  project,
+  isOpen,
+  onClose,
+}) => {
   const { useUpdateProject } = useProjects();
-  const { useGetUsers } = useUsers();
   const updateProjectMutation = useUpdateProject();
-  const { data: users, isLoading: usersLoading } = useGetUsers();
-  
-  const form = useForm<FormValues>({
+  const [categoryInput, setCategoryInput] = React.useState("");
+
+  const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      title: project.title,
-      description: project.description,
-      startDate: project.startDate ? parseISO(project.startDate) : new Date(),
-      dueDate: project.dueDate ? parseISO(project.dueDate) : null,
-      team: project.team ? project.team.map(member => member.id) : [],
-      categories: project.categories || [],
-      status: project.status || 'planned',
-      progress: project.progress,
+      title: project?.title || "",
+      description: project?.description || "",
+      startDate: project?.startDate ? new Date(project.startDate) : new Date(),
+      dueDate: project?.dueDate ? new Date(project.dueDate) : new Date(),
+      status: (project?.status as "planned" | "active" | "on-hold" | "completed" | "cancelled") || "planned",
+      categories: project?.categories || [],
     },
   });
 
-  // Update form when project changes
-  useEffect(() => {
-    form.reset({
-      title: project.title,
-      description: project.description,
-      startDate: project.startDate ? parseISO(project.startDate) : new Date(),
-      dueDate: project.dueDate ? parseISO(project.dueDate) : null,
-      team: project.team ? project.team.map(member => member.id) : [],
-      categories: project.categories || [],
-      status: project.status || 'planned',
-      progress: project.progress,
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    updateProjectMutation.mutate({
+      id: project.id,
+      ...values,
     });
-  }, [project, form]);
-  
-  const onSubmit = async (values: FormValues) => {
-    // Transform team IDs to user objects
-    const selectedTeamMembers = values.team?.map(userId => 
-      users?.find(user => user.id === userId)
-    ).filter(Boolean) || [];
-    
-    try {
-      await updateProjectMutation.mutateAsync({
-        id: project.id,
-        title: values.title,
-        description: values.description,
-        startDate: values.startDate.toISOString(),
-        dueDate: values.dueDate ? values.dueDate.toISOString() : null,
-        team: selectedTeamMembers as any,
-        categories: values.categories,
-        status: values.status,
-        progress: values.progress,
-      });
-      onClose();
-    } catch (error) {
-      console.error('Error updating project:', error);
+    onClose();
+  };
+
+  const handleAddCategory = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && categoryInput.trim() !== "") {
+      e.preventDefault();
+      const currentCategories = form.getValues("categories") || [];
+      if (!currentCategories.includes(categoryInput.trim())) {
+        form.setValue("categories", [...currentCategories, categoryInput.trim()]);
+        setCategoryInput("");
+      }
     }
   };
 
+  const handleRemoveCategory = (category: string) => {
+    const currentCategories = form.getValues("categories") || [];
+    form.setValue(
+      "categories",
+      currentCategories.filter((c) => c !== category)
+    );
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[550px]">
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Edit Project</DialogTitle>
+          <DialogDescription>
+            Update the details of your project.
+          </DialogDescription>
         </DialogHeader>
-        
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -118,7 +130,7 @@ export const EditProjectDialog: React.FC<EditProjectDialogProps> = ({ project, i
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="description"
@@ -126,18 +138,18 @@ export const EditProjectDialog: React.FC<EditProjectDialogProps> = ({ project, i
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Textarea 
-                      placeholder="Enter project description" 
-                      className="resize-none min-h-[100px]" 
-                      {...field} 
+                    <Textarea
+                      placeholder="Enter project description"
+                      className="resize-none"
+                      {...field}
                     />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="startDate"
@@ -148,9 +160,9 @@ export const EditProjectDialog: React.FC<EditProjectDialogProps> = ({ project, i
                       <PopoverTrigger asChild>
                         <FormControl>
                           <Button
-                            variant="outline"
+                            variant={"outline"}
                             className={cn(
-                              "w-full pl-3 text-left font-normal",
+                              "pl-3 text-left font-normal",
                               !field.value && "text-muted-foreground"
                             )}
                           >
@@ -176,20 +188,20 @@ export const EditProjectDialog: React.FC<EditProjectDialogProps> = ({ project, i
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="dueDate"
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
-                    <FormLabel>Due Date (Optional)</FormLabel>
+                    <FormLabel>Due Date</FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
                         <FormControl>
                           <Button
-                            variant="outline"
+                            variant={"outline"}
                             className={cn(
-                              "w-full pl-3 text-left font-normal",
+                              "pl-3 text-left font-normal",
                               !field.value && "text-muted-foreground"
                             )}
                           >
@@ -205,10 +217,9 @@ export const EditProjectDialog: React.FC<EditProjectDialogProps> = ({ project, i
                       <PopoverContent className="w-auto p-0" align="start">
                         <Calendar
                           mode="single"
-                          selected={field.value || undefined}
+                          selected={field.value}
                           onSelect={field.onChange}
                           initialFocus
-                          disabled={(date) => date < (form.watch('startDate') || new Date())}
                         />
                       </PopoverContent>
                     </Popover>
@@ -217,114 +228,89 @@ export const EditProjectDialog: React.FC<EditProjectDialogProps> = ({ project, i
                 )}
               />
             </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Status</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || 'planned'}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a status" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="planned">Planned</SelectItem>
-                        <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="on-hold">On Hold</SelectItem>
-                        <SelectItem value="completed">Completed</SelectItem>
-                        <SelectItem value="cancelled">Cancelled</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="categories"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Categories (Optional)</FormLabel>
+
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Status</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
-                      <MultiSelect
-                        placeholder="Select categories"
-                        selected={field.value || []}
-                        options={[
-                          { label: 'Marketing', value: 'marketing' },
-                          { label: 'Design', value: 'design' },
-                          { label: 'Development', value: 'development' },
-                          { label: 'Research', value: 'research' },
-                          { label: 'Planning', value: 'planning' },
-                        ]}
-                        onChange={field.onChange}
-                      />
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a status" />
+                      </SelectTrigger>
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            
+                    <SelectContent>
+                      <SelectItem value="planned">Planned</SelectItem>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="on-hold">On Hold</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={form.control}
-              name="progress"
+              name="categories"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Progress ({field.value}%)</FormLabel>
+                  <FormLabel>Categories</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="range" 
-                      min="0" 
-                      max="100" 
-                      step="1"
-                      {...field}
-                      value={field.value || 0}
-                      onChange={(e) => field.onChange(parseInt(e.target.value))}
-                      className="w-full"
-                    />
+                    <div className="space-y-2">
+                      <Input
+                        placeholder="Add a category and press Enter"
+                        value={categoryInput}
+                        onChange={(e) => setCategoryInput(e.target.value)}
+                        onKeyDown={handleAddCategory}
+                      />
+                      <div className="flex flex-wrap gap-2">
+                        {field.value?.map((category) => (
+                          <Badge key={category} variant="secondary">
+                            {category}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-4 w-4 p-0 ml-1"
+                              onClick={() => handleRemoveCategory(category)}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
-            <FormField
-              control={form.control}
-              name="team"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Team Members (Optional)</FormLabel>
-                  <FormControl>
-                    <MultiSelect
-                      placeholder="Select team members"
-                      selected={field.value || []}
-                      options={
-                        users?.map(user => ({
-                          label: user.name,
-                          value: user.id,
-                        })) || []
-                      }
-                      onChange={field.onChange}
-                      disabled={usersLoading}
-                      loading={usersLoading}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <DialogFooter className="mt-6">
-              <Button type="button" variant="outline" onClick={onClose}>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                className="mt-2"
+              >
                 Cancel
               </Button>
-              <Button type="submit" disabled={updateProjectMutation.isPending}>
-                {updateProjectMutation.isPending ? 'Saving...' : 'Save Changes'}
+              <Button
+                type="submit"
+                disabled={updateProjectMutation.isPending}
+                className="mt-2"
+              >
+                {updateProjectMutation.isPending && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                Save Changes
               </Button>
             </DialogFooter>
           </form>

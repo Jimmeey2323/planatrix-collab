@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -44,12 +43,13 @@ export const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({ isOpen
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      title: '',
-      description: '',
+      title: "",
+      description: "",
       startDate: new Date(),
+      dueDate: new Date(),
+      status: "planned" as const,
       team: [],
       categories: [],
-      status: 'planned',
     },
   });
   

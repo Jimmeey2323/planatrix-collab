@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Search, Filter, Grid3X3, List } from 'lucide-react';
@@ -8,6 +7,7 @@ import { useProjects } from '@/hooks/use-projects';
 import ProjectCard from '@/components/projects/ProjectCard';
 import { CreateProjectDialog } from '@/components/projects/CreateProjectDialog';
 import { Project } from '@/lib/types';
+import { AvatarStack } from "@/components/ui/AvatarStack";
 
 const Projects: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -17,7 +17,6 @@ const Projects: React.FC = () => {
   const { useGetProjects } = useProjects();
   const { data: projects, isLoading, error } = useGetProjects();
   
-  // Filter projects based on search query
   const filteredProjects = projects?.filter(project => 
     project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     project.description.toLowerCase().includes(searchQuery.toLowerCase())
