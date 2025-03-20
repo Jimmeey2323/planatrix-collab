@@ -1,9 +1,10 @@
-
 import React from 'react';
 import { Calendar, CheckCheck, Clock, LayoutGrid, Plus, Users } from 'lucide-react';
 import ProjectCard from '@/components/projects/ProjectCard';
 import TaskList from '@/components/tasks/TaskList';
+import { Link, useNavigate } from 'react-router-dom';
 import { Project, Task, User, Activity } from '@/lib/types';
+import { Button } from '@/components/ui/button';
 
 // Mock data for demo purposes
 const mockTeam: User[] = [
@@ -157,20 +158,17 @@ const mockActivity: Activity[] = [
 ];
 
 const Dashboard: React.FC = () => {
+  const navigate = useNavigate();
   // Add safe fallbacks to prevent errors
   const safeProjects = mockProjects || [];
   const safeTasks = mockTasks || [];
   
+  const handleNewProject = () => {
+    navigate('/projects');
+  };
+  
   return (
-    <div className="p-6 space-y-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Dashboard</h1>
-        <button className="bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 rounded-md font-medium text-sm flex items-center transition-colors">
-          <Plus className="h-4 w-4 mr-1.5" />
-          New Project
-        </button>
-      </div>
-      
+    <div className="space-y-8">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <DashboardCard 
           icon={<LayoutGrid className="h-5 w-5 text-brand-500" />}
@@ -207,11 +205,19 @@ const Dashboard: React.FC = () => {
           <div>
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-medium">Recent Projects</h2>
-              <button className="text-sm text-brand-600 hover:text-brand-700 font-medium">View All</button>
+              <Button 
+                variant="link" 
+                onClick={() => navigate('/projects')} 
+                className="text-sm text-brand-600 hover:text-brand-700 font-medium"
+              >
+                View All
+              </Button>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {safeProjects.map(project => (
-                <ProjectCard key={project.id} project={project} />
+                <Link key={project.id} to={`/projects/${project.id}`}>
+                  <ProjectCard project={project} />
+                </Link>
               ))}
             </div>
           </div>
@@ -234,10 +240,14 @@ const Dashboard: React.FC = () => {
           <div className="rounded-xl bg-card border border-border p-5 mt-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-medium">Upcoming</h2>
-              <button className="text-sm text-brand-600 hover:text-brand-700 font-medium flex items-center">
+              <Button
+                variant="link"
+                onClick={() => navigate('/calendar')}
+                className="text-sm text-brand-600 hover:text-brand-700 font-medium flex items-center"
+              >
                 <Calendar className="h-4 w-4 mr-1" />
                 View Calendar
-              </button>
+              </Button>
             </div>
             <div className="space-y-3">
               {mockTasks
