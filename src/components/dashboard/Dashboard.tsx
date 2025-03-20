@@ -157,6 +157,10 @@ const mockActivity: Activity[] = [
 ];
 
 const Dashboard: React.FC = () => {
+  // Add safe fallbacks to prevent errors
+  const safeProjects = mockProjects || [];
+  const safeTasks = mockTasks || [];
+  
   return (
     <div className="p-6 space-y-8">
       <div className="flex items-center justify-between">
@@ -171,28 +175,28 @@ const Dashboard: React.FC = () => {
         <DashboardCard 
           icon={<LayoutGrid className="h-5 w-5 text-brand-500" />}
           title="Total Projects"
-          value={mockProjects.length.toString()}
+          value={safeProjects.length.toString()}
           trend="+2 this month"
           trendUp={true}
         />
         <DashboardCard 
           icon={<CheckCheck className="h-5 w-5 text-emerald-500" />}
           title="Completed Tasks"
-          value={mockTasks.filter(t => t.status === 'done').length.toString()}
+          value={safeTasks.filter(t => t.status === 'done').length.toString()}
           trend="+5 this week"
           trendUp={true}
         />
         <DashboardCard 
           icon={<Clock className="h-5 w-5 text-amber-500" />}
           title="Tasks In Progress"
-          value={mockTasks.filter(t => t.status === 'in-progress').length.toString()}
+          value={safeTasks.filter(t => t.status === 'in-progress').length.toString()}
           trend="On track"
           trendUp={null}
         />
         <DashboardCard 
           icon={<Users className="h-5 w-5 text-indigo-500" />}
           title="Team Members"
-          value={mockTeam.length.toString()}
+          value={(mockTeam || []).length.toString()}
           trend="+1 this week"
           trendUp={true}
         />
@@ -206,14 +210,14 @@ const Dashboard: React.FC = () => {
               <button className="text-sm text-brand-600 hover:text-brand-700 font-medium">View All</button>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {mockProjects.map(project => (
+              {safeProjects.map(project => (
                 <ProjectCard key={project.id} project={project} />
               ))}
             </div>
           </div>
           
           <div>
-            <TaskList tasks={mockTasks} title="Your Tasks" />
+            <TaskList tasks={safeTasks} title="Your Tasks" />
           </div>
         </div>
         
@@ -221,7 +225,7 @@ const Dashboard: React.FC = () => {
           <div className="rounded-xl bg-card border border-border p-5">
             <h2 className="text-xl font-medium mb-4">Recent Activity</h2>
             <div className="space-y-4">
-              {mockActivity.map(activity => (
+              {(mockActivity || []).map(activity => (
                 <ActivityItem key={activity.id} activity={activity} />
               ))}
             </div>

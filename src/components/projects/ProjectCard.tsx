@@ -14,9 +14,10 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
     ? formatDistanceToNow(new Date(project.dueDate), { addSuffix: true })
     : 'No deadline';
     
-  // Get task stats
-  const totalTasks = project.tasks.length;
-  const completedTasks = project.tasks.filter(task => task.status === 'done').length;
+  // Get task stats (handle case where project.tasks might be undefined)
+  const tasks = project.tasks || [];
+  const totalTasks = tasks.length;
+  const completedTasks = tasks.filter(task => task.status === 'done').length;
   const completionPercentage = totalTasks > 0 
     ? Math.round((completedTasks / totalTasks) * 100) 
     : 0;
