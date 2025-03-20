@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/hooks/use-toast';
+import { Github } from 'lucide-react';
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address.' }),
@@ -19,9 +20,10 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 const Login: React.FC = () => {
-  const { signIn } = useAuth();
+  const { signIn, signInWithGitHub, signInWithPasscode } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [passcode, setPasscode] = useState('');
   
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -38,6 +40,25 @@ const Login: React.FC = () => {
     } catch (error: any) {
       // Error is handled in the auth context
       console.error('Login error:', error.message);
+    }
+  };
+
+  const handleGitHubSignIn = async () => {
+    try {
+      await signInWithGitHub();
+      // No navigation needed here as OAuth will redirect
+    } catch (error: any) {
+      console.error('GitHub login error:', error.message);
+    }
+  };
+
+  const handlePasscodeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await signInWithPasscode(passcode);
+      navigate('/dashboard');
+    } catch (error: any) {
+      console.error('Passcode error:', error.message);
     }
   };
 
@@ -124,13 +145,26 @@ const Login: React.FC = () => {
               </div>
             </div>
 
-            <div className="mt-6 grid grid-cols-2 gap-3">
-              <Button variant="outline" className="w-full" onClick={() => toast({ title: "Google sign-in", description: "Google authentication will be implemented in the next phase." })}>
-                Google
-              </Button>
-              <Button variant="outline" className="w-full" onClick={() => toast({ title: "GitHub sign-in", description: "GitHub authentication will be implemented in the next phase." })}>
+            <div className="mt-6 space-y-4">
+              <Button variant="outline" className="w-full flex items-center justify-center" onClick={handleGitHubSignIn}>
+                <Github className="mr-2 h-4 w-4" />
                 GitHub
               </Button>
+              
+              <form onSubmit={handlePasscodeSubmit} className="mt-4">
+                <div className="flex space-x-2">
+                  <Input 
+                    type="password"
+                    placeholder="Enter passcode"
+                    value={passcode}
+                    onChange={(e) => setPasscode(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button type="submit">
+                    Bypass
+                  </Button>
+                </div>
+              </form>
             </div>
           </div>
         </div>

@@ -1,13 +1,15 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
-import { supabase } from './supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 interface AuthContextType {
   session: Session | null;
   user: User | null;
   signIn: (email: string, password: string) => Promise<void>;
+  signInWithGitHub: () => Promise<void>;
+  signInWithPasscode: (passcode: string) => Promise<void>;
   signUp: (email: string, password: string, name: string) => Promise<void>;
   signOut: () => Promise<void>;
   loading: boolean;
@@ -63,6 +65,70 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error: any) {
       toast({
         title: "Error signing in",
+        description: error.message,
+        variant: "destructive",
+      });
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const signInWithGitHub = async () => {
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'github',
+        options: {
+          redirectTo: `${window.location.origin}/dashboard`
+        }
+      });
+      if (error) throw error;
+    } catch (error: any) {
+      toast({
+        title: "Error signing in with GitHub",
+        description: error.message,
+        variant: "destructive",
+      });
+      setLoading(false);
+      throw error;
+    }
+  };
+
+  const signInWithPasscode = async (passcode: string) => {
+    setLoading(true);
+    try {
+      if (passcode === '9819') {
+        // Create a temporary session for bypass login
+        const tempEmail = `bypass_${Date.now()}@example.com`;
+        const tempPassword = `Bypass${Date.now()}`;
+        
+        // Sign up with temporary credentials (this creates a real account)
+        const { error: signUpError } = await supabase.auth.signUp({
+          email: tempEmail,
+          password: tempPassword
+        });
+        
+        if (signUpError) throw signUpError;
+        
+        // Then immediately sign in with those credentials
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: tempEmail,
+          password: tempPassword
+        });
+        
+        if (signInError) throw signInError;
+        
+        toast({
+          title: "Bypass login successful",
+          description: "You've been logged in with the passcode.",
+        });
+      } else {
+        throw new Error("Invalid passcode");
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error with passcode",
         description: error.message,
         variant: "destructive",
       });
@@ -166,6 +232,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         session,
         user,
         signIn,
+        signInWithGitHub,
+        signInWithPasscode,
         signUp,
         signOut,
         loading,
