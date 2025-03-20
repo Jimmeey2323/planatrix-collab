@@ -152,21 +152,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       
       if (signUpError) throw signUpError;
-
-      // Create user profile in users table
-      const { error: profileError } = await supabase
-        .from('users')
-        .insert([
-          { 
-            id: (await supabase.auth.getUser()).data.user?.id,
-            email,
-            name,
-            avatar: '',
-            role: 'viewer'
-          }
-        ]);
       
-      if (profileError) throw profileError;
+      // We're removing the user profile creation since the 'users' table doesn't exist
+      // This would need a separate SQL migration to create the users table first
       
       toast({
         title: "Account created",
