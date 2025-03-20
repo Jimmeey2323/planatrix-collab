@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { Calendar, MoreHorizontal } from 'lucide-react';
 import { Project } from '@/lib/types';
-import { AvatarStack } from "@/components/ui/AvatarStack";
+import AvatarStack from "@/components/ui/AvatarStack";
 import { formatDistanceToNow } from 'date-fns';
 
 interface ProjectCardProps {

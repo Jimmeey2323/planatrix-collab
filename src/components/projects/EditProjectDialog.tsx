@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import {
@@ -81,7 +82,12 @@ export const EditProjectDialog: React.FC<EditProjectDialogProps> = ({
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     updateProjectMutation.mutate({
       id: project.id,
-      ...values,
+      title: values.title,
+      description: values.description,
+      startDate: values.startDate.toISOString(),
+      dueDate: values.dueDate.toISOString(),
+      status: values.status,
+      categories: values.categories,
     });
     onClose();
   };

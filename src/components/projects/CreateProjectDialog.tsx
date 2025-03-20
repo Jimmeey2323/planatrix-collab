@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -22,7 +23,7 @@ const formSchema = z.object({
   description: z.string().min(10, { message: 'Description must be at least 10 characters.' }),
   startDate: z.date(),
   dueDate: z.date().optional(),
-  status: z.string().optional(),
+  status: z.enum(['planned', 'active', 'on-hold', 'completed', 'cancelled']),
   team: z.array(z.string()).optional(),
   categories: z.array(z.string()).optional(),
 });

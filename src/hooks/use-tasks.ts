@@ -391,15 +391,19 @@ export const useTasks = () => {
       onSuccess: (data) => {
         queryClient.invalidateQueries({ queryKey: ['tasks', data.id] });
         // Also invalidate project tasks
-        const { data: taskData } = supabase
-          .from('tasks')
-          .select('project_id')
-          .eq('id', data.id)
-          .single();
-          
-        if (taskData) {
-          queryClient.invalidateQueries({ queryKey: ['tasks', 'project', taskData.project_id] });
-        }
+        const fetchProjectId = async () => {
+          const { data: taskData, error } = await supabase
+            .from('tasks')
+            .select('project_id')
+            .eq('id', data.id)
+            .single();
+            
+          if (taskData && !error) {
+            queryClient.invalidateQueries({ queryKey: ['tasks', 'project', taskData.project_id] });
+          }
+        };
+        
+        fetchProjectId();
         
         toast({
           title: "Task updated",

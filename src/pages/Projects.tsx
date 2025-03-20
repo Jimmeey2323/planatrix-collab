@@ -7,7 +7,7 @@ import { useProjects } from '@/hooks/use-projects';
 import ProjectCard from '@/components/projects/ProjectCard';
 import { CreateProjectDialog } from '@/components/projects/CreateProjectDialog';
 import { Project } from '@/lib/types';
-import { AvatarStack } from "@/components/ui/AvatarStack";
+import AvatarStack from "@/components/ui/AvatarStack";
 
 const Projects: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
